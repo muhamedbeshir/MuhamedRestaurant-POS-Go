@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام مطعم - POS</title>
+
+    <!-- Cairo Font (embedded) -->
+    <style>
+        @font-face {
+            font-family: 'Cairo';
+            src: url('/assets/fonts/Cairo-Regular.woff2') format('woff2');
+            font-weight: 400;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'Cairo';
+            src: url('/assets/fonts/Cairo-Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-display: swap;
+        }
+    </style>
+
+    <!-- CSS -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --theme-color: #10b981;
+            --bg-color: #f0f2f5;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            font-family: 'Cairo', Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            overflow: hidden;
+        }
+
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 240px;
+            background: white;
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            padding: 1rem 0;
+        }
+
+        .logo {
+            padding: 0 1rem;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--theme-color);
+        }
+
+        .nav {
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            color: #4b5563;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: #f3f4f6;
+        }
+
+        .nav-item.active {
+            background: var(--theme-color);
+            color: white;
+        }
+
+        .nav-item-icon {
+            font-size: 1.25rem;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            background: white;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 1.125rem;
+            font-weight: 700;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--theme-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+        }
+
+        .user-name {
+            font-weight: 600;
+        }
+
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--theme-color);
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 1rem;
+            color: #6b7280;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="app" id="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">نظام مطعم</div>
+            <nav class="nav">
+                <a href="#dashboard" class="nav-item active" data-page="dashboard">
+                    <span class="nav-item-icon">📊</span>
+                    <span data-key="dashboard">لوحة التحكم</span>
+                </a>
+                <a href="#pos" class="nav-item" data-page="pos">
+                    <span class="nav-item-icon">🍽️</span>
+                    <span data-key="pos">شبكة البيع</span>
+                </a>
+                <a href="#tables" class="nav-item" data-page="tables">
+                    <span class="nav-item-icon">🪑</span>
+                    <span data-key="tables">الطاولات</span>
+                </a>
+                <a href="#kitchen" class="nav-item" data-page="kitchen">
+                    <span class="nav-item-icon">👨‍🍳</span>
+                    <span data-key="kitchen">المطبخ</span>
+                </a>
+                <a href="#orders" class="nav-item" data-page="orders">
+                    <span class="nav-item-icon">📋</span>
+                    <span data-key="orders">الطلبات</span>
+                </a>
+                <a href="#payments" class="nav-item" data-page="pages">
+                    <span class="nav-item-icon">💳</span>
+                    <span data-key="payments">المدفوعات</span>
+                </a>
+                <a href="#reports" class="nav-item" data-page="reports">
+                    <span class="nav-item-icon">📈</span>
+                    <span data-key="reports">التقارير</span>
+                </a>
+                <a href="#inventory" class="nav-item" data-page="inventory">
+                    <span class="nav-item-icon">📦</span>
+                    <span data-key="inventory">المخزون</span>
+                </a>
+                <a href="#staff" class="nav-item" data-page="staff">
+                    <span class="nav-item-icon">👥</span>
+                    <span data-key="staff">الموظفين</span>
+                </a>
+                <a href="#customers" class="nav-item" data-page="customers">
+                    <span class="nav-item-icon">👤</span>
+                    <span data-key="customers">العملاء</span>
+                </a>
+                <a href="#reservations" class="nav-item" data-page="reservations">
+                    <span class="nav-item-icon">📅</span>
+                    <span data-key="reservations">الحجوزات</span>
+                </a>
+                <a href="#discounts" class="nav-item" data-page="discounts">
+                    <span class="nav-item-icon">🎟️</span>
+                    <span data-key="discounts">الخصومات</span>
+                </a>
+                <a href="#settings" class="nav-item" data-page="settings">
+                    <span class="nav-item-icon">⚙️</span>
+                    <span data-key="settings">الإعدادات</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <h1 class="page-title" id="page-title">لوحة التحكم</h1>
+                <div class="user-info">
+                    <div class="user-avatar">A</div>
+                    <div class="user-name">Admin</div>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div class="content">
+                <!-- Loading -->
+                <div class="loading" id="loading">
+                    جاري التحميل...
+                </div>
+
+                <!-- Pages -->
+                <div class="page" id="page-dashboard">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">إجمالي الطلبات اليوم</div>
+                            <div class="stat-value" id="stat-orders">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">إجمالي المبيعات اليوم</div>
+                            <div class="stat-value" id="stat-revenue">0 ج.م</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">الطاولات المتاحة</div>
+                            <div class="stat-value" id="stat-tables">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">المخزون المنخفض</div>
+                            <div class="stat-value" id="stock-alerts">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="page" id="page-pos">
+                    <h2>شبكة البيع</h2>
+                    <p>POS Page - Coming Soon</p>
+                </div>
+
+                <div class="page" id="page-tables">
+                    <h2>الطاولات</h2>
+                    <p>Tables Page - Coming Soon</p>
+                </div>
+
+                <div class="page" id="page-kitchen">
+                    <h2>المطبخ</h2>
+                    <p>Kitchen Page - Coming Soon</p>
+                </div>
+
+                <div class="page" id="page-orders">
+                    <h2>الطلبات</h2>
+                    <p>Orders Page - Coming Soon</p>
+                </div>
+
+                <div class="page" id="page-payments">
+                    <h2>المدفوعات</h2>
+                    <p>Payments Page - Coming Soon</p>
+                </div>
+
+                <div class="page" id="page-reports">
+                    <h2>التقارير</h2>
+                    <p>Reports Page - Coming Soon</p>
+                </div>
+
+                <div class="page" id="page-inventory">
+                    <h2>المخزون</h2>
+                    <p>Inventory Page - Coming Soon</p>
+                </div>
+
+                <div class="page" id="page-staff">
+                    <h2>الموظفين</h2>
+                    <p>Staff Page - Coming Soon</p>
+                </div>
+
+                <div class="page" id="page-customers">
+                    <h2>العملاء</h2>
+                    <p>Customers Page - Coming Soon</p>
+                </div>
+
+                <div class="page" id="page-reservations">
+                    <h2>الحجوزات</h2>
+                    <p>Reservations Page - Coming Soon</p>
+                </div>
+
+                <div class="page" id="page-discounts">
+                    <h2>الخصومات</h2>
+                    <p>Discounts Page - Coming Soon</p>
+                </div>
+
+                <div class="page" id="page-settings">
+                    <h2>الإعدادات</h2>
+                    <p>Settings Page - Coming Soon</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="/js/app.js"></script>
+</body>
+</html>
